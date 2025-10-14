@@ -32,6 +32,6 @@
 - Highest online share observed in 2023-06 at 57.0%
 
 ## Visualizations
-![Monthly total sales trend](coffee_total_sales_trend.png)
-![Channel sales breakdown](coffee_channel_sales_breakdown.png)
-![Marketing vs sales scatter](coffee_marketing_vs_sales.png)
+![Monthly total sales trend](assets/coffee_total_sales_trend.png)
+![Channel sales breakdown](assets/coffee_channel_sales_breakdown.png)
+![Marketing vs sales scatter](assets/coffee_marketing_vs_sales.png)

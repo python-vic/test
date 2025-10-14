@@ -1,15 +1,23 @@
 from __future__ import annotations
 
 import csv
+import shutil
 from dataclasses import dataclass
 from math import sqrt
 from pathlib import Path
 from statistics import mean, median
 from typing import Iterable, List
 
+import matplotlib.pyplot as plt
+
 
 DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "coffee_sales.csv"
-OUTPUT_PATH = Path(__file__).resolve().parents[1] / "outputs" / "coffee_sales_summary.md"
+OUTPUT_DIR = Path(__file__).resolve().parents[1] / "outputs"
+OUTPUT_PATH = OUTPUT_DIR / "coffee_sales_summary.md"
+SITE_DIR = Path(__file__).resolve().parents[1] / "docs"
+SITE_ASSETS_DIR = SITE_DIR / "assets"
+SITE_INDEX_PATH = SITE_DIR / "index.md"
+
 
 
 @dataclass
@@ -84,7 +92,9 @@ def load_records(path: Path = DATA_PATH) -> list[MonthlyRecord]:
     return records
 
 
-def build_summary(records: list[MonthlyRecord]) -> str:
+def build_summary(
+    records: list[MonthlyRecord], plot_paths: dict[str, Path | str] | None = None
+) -> str:
     marketing_spend = [record.marketing_spend for record in records]
     online_sales = [record.online_sales for record in records]
     in_store_sales = [record.in_store_sales for record in records]
@@ -146,13 +156,93 @@ def build_summary(records: list[MonthlyRecord]) -> str:
     )
     summary_lines.extend(online_share_lines)
 
+    if plot_paths:
+        visualization_lines = ["", "## Visualizations"]
+        for label, path in plot_paths.items():
+            relative = Path(path)
+            visualization_lines.append(f"![{label}]({relative.as_posix()})")
+        summary_lines.extend(visualization_lines)
+
     return "\n".join(summary_lines) + "\n"
+
+
+def generate_plots(records: list[MonthlyRecord], output_dir: Path = OUTPUT_DIR) -> dict[str, Path]:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    months = [record.month for record in records]
+    marketing_spend = [record.marketing_spend for record in records]
+    online_sales = [record.online_sales for record in records]
+    in_store_sales = [record.in_store_sales for record in records]
+    total_sales = [record.total_sales for record in records]
+
+    def save_fig(fig: plt.Figure, filename: str) -> Path:
+        fig.tight_layout()
+        path = output_dir / filename
+        fig.savefig(path, dpi=150)
+        plt.close(fig)
+        return path
+
+    plots: dict[str, Path] = {}
+
+    fig1, ax1 = plt.subplots(figsize=(10, 6))
+    ax1.plot(months, total_sales, marker="o", linewidth=2, label="Total sales")
+    ax1.set_title("Monthly Total Sales")
+    ax1.set_xlabel("Month")
+    ax1.set_ylabel("Sales (USD)")
+    ax1.grid(True, axis="y", linestyle="--", alpha=0.4)
+    ax1.tick_params(axis="x", rotation=45)
+    fig1.tight_layout()
+    plots["Monthly total sales trend"] = save_fig(fig1, "coffee_total_sales_trend.png")
+
+    fig2, ax2 = plt.subplots(figsize=(10, 6))
+    ax2.bar(months, in_store_sales, label="In-store sales")
+    ax2.bar(months, online_sales, bottom=in_store_sales, label="Online sales")
+    ax2.set_title("Sales Breakdown by Channel")
+    ax2.set_xlabel("Month")
+    ax2.set_ylabel("Sales (USD)")
+    ax2.tick_params(axis="x", rotation=45)
+    ax2.legend()
+    plots["Channel sales breakdown"] = save_fig(fig2, "coffee_channel_sales_breakdown.png")
+
+    slope, intercept = _simple_linear_regression(marketing_spend, total_sales)
+    fit_line = [slope * spend + intercept for spend in marketing_spend]
+
+    fig3, ax3 = plt.subplots(figsize=(8, 6))
+    ax3.scatter(marketing_spend, total_sales, color="tab:blue", label="Monthly totals")
+    ax3.plot(marketing_spend, fit_line, color="tab:orange", label="Regression line")
+    ax3.set_title("Marketing Spend vs. Total Sales")
+    ax3.set_xlabel("Marketing spend (USD)")
+    ax3.set_ylabel("Total sales (USD)")
+    ax3.grid(True, linestyle="--", alpha=0.4)
+    ax3.legend()
+    plots["Marketing vs sales scatter"] = save_fig(fig3, "coffee_marketing_vs_sales.png")
+
+    return plots
+
+
+def publish_site(records: list[MonthlyRecord], plot_paths: dict[str, Path], site_dir: Path = SITE_DIR) -> None:
+    site_dir.mkdir(parents=True, exist_ok=True)
+    assets_dir = site_dir / "assets"
+    assets_dir.mkdir(parents=True, exist_ok=True)
+
+    relative_paths: dict[str, Path] = {}
+    for label, original_path in plot_paths.items():
+        destination = assets_dir / original_path.name
+        shutil.copy2(original_path, destination)
+        relative_paths[label] = Path("assets") / original_path.name
+
+    site_summary = build_summary(records, plot_paths=relative_paths)
+    site_index_path = site_dir / "index.md"
+    site_index_path.write_text(site_summary, encoding="utf-8")
 
 
 def main() -> None:
     records = load_records()
-    summary = build_summary(records)
+    plot_paths = generate_plots(records)
+    relative_output_paths = {label: Path(path.name) for label, path in plot_paths.items()}
+    summary = build_summary(records, plot_paths=relative_output_paths)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT_PATH.write_text(summary, encoding="utf-8")
+    publish_site(records, plot_paths)
     print(summary)
 
 
