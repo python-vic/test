@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import json
 import shutil
 from dataclasses import dataclass
 from math import sqrt
@@ -17,7 +18,6 @@ OUTPUT_PATH = OUTPUT_DIR / "coffee_sales_summary.md"
 SITE_DIR = Path(__file__).resolve().parents[1] / "docs"
 SITE_ASSETS_DIR = SITE_DIR / "assets"
 SITE_INDEX_PATH = SITE_DIR / "index.md"
-
 
 
 @dataclass
@@ -219,6 +219,214 @@ def generate_plots(records: list[MonthlyRecord], output_dir: Path = OUTPUT_DIR) 
     return plots
 
 
+def _build_interactive_section(records: list[MonthlyRecord]) -> str:
+    months = [record.month for record in records]
+    marketing_spend = [record.marketing_spend for record in records]
+    online_sales = [record.online_sales for record in records]
+    in_store_sales = [record.in_store_sales for record in records]
+    total_sales = [record.total_sales for record in records]
+
+    slope, intercept = _simple_linear_regression(marketing_spend, total_sales)
+    fit_line = [slope * spend + intercept for spend in marketing_spend]
+
+    data_payload = {
+        "months": months,
+        "total_sales": total_sales,
+        "online_sales": online_sales,
+        "in_store_sales": in_store_sales,
+        "marketing_spend": marketing_spend,
+        "scatter_points": [
+            {"x": spend, "y": sales} for spend, sales in zip(marketing_spend, total_sales)
+        ],
+        "regression_points": [
+            {"x": spend, "y": predicted}
+            for spend, predicted in zip(marketing_spend, fit_line)
+        ],
+    }
+    json_data = json.dumps(data_payload, ensure_ascii=False).replace("</", "<\\/")
+
+    return "\n".join(
+        [
+            "## Interactive Visualizations",
+            "",
+            "<style>",
+            ".chart-grid {",
+            "  display: grid;",
+            "  gap: 1.75rem;",
+            "  margin-top: 1.5rem;",
+            "}",
+            "@media (min-width: 900px) {",
+            "  .chart-grid {",
+            "    grid-template-columns: repeat(2, minmax(0, 1fr));",
+            "  }",
+            "  .chart-grid .chart-card:nth-child(3) {",
+            "    grid-column: span 2;",
+            "  }",
+            "}",
+            ".chart-card {",
+            "  background: #ffffff;",
+            "  border: 1px solid #e5e7eb;",
+            "  border-radius: 12px;",
+            "  padding: 1.5rem;",
+            "  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);",
+            "}",
+            ".chart-card h3 {",
+            "  margin-top: 0;",
+            "  margin-bottom: 1rem;",
+            "  font-size: 1.1rem;",
+            "}",
+            ".chart-card canvas {",
+            "  max-height: 420px;",
+            "}",
+            "</style>",
+            '<div class="chart-grid">',
+            '  <section class="chart-card">',
+            "    <h3>Monthly Total Sales</h3>",
+            '    <canvas id="totalSalesChart"></canvas>',
+            "  </section>",
+            '  <section class="chart-card">',
+            "    <h3>Sales Breakdown by Channel</h3>",
+            '    <canvas id="channelBreakdownChart"></canvas>',
+            "  </section>",
+            '  <section class="chart-card">',
+            "    <h3>Marketing Spend vs. Total Sales</h3>",
+            '    <canvas id="marketingScatterChart"></canvas>',
+            "  </section>",
+            "</div>",
+            '<script id="coffee-chart-data" type="application/json">',
+            json_data,
+            "</script>",
+            '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>',
+            "<script>",
+            "const chartPayload = JSON.parse(document.getElementById('coffee-chart-data').textContent);",
+            "const usdFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });",
+            "const numberFormatter = value => usdFormatter.format(value);",
+            "",
+            "new Chart(document.getElementById('totalSalesChart'), {",
+            "  type: 'line',",
+            "  data: {",
+            "    labels: chartPayload.months,",
+            "    datasets: [{",
+            "      label: 'Total sales',",
+            "      data: chartPayload.total_sales,",
+            "      fill: false,",
+            "      tension: 0.25,",
+            "      borderColor: 'rgb(16, 124, 165)',",
+            "      backgroundColor: 'rgba(16, 124, 165, 0.1)',",
+            "      pointRadius: 5,",
+            "      pointHoverRadius: 7,",
+            "    }]",
+            "  },",
+            "  options: {",
+            "    responsive: true,",
+            "    maintainAspectRatio: false,",
+            "    scales: {",
+            "      y: {",
+            "        ticks: { callback: value => numberFormatter(value) },",
+            "        beginAtZero: false,",
+            "      }",
+            "    },",
+            "    plugins: {",
+            "      tooltip: {",
+            "        callbacks: {",
+            "          label: context => `${context.dataset.label}: ${numberFormatter(context.parsed.y)}`",
+            "        }",
+            "      },",
+            "      legend: { display: false }",
+            "    }",
+            "  }",
+            "});",
+            "",
+            "new Chart(document.getElementById('channelBreakdownChart'), {",
+            "  type: 'bar',",
+            "  data: {",
+            "    labels: chartPayload.months,",
+            "    datasets: [",
+            "      {",
+            "        label: 'In-store sales',",
+            "        data: chartPayload.in_store_sales,",
+            "        backgroundColor: 'rgba(234, 88, 12, 0.85)',",
+            "        stack: 'sales',",
+            "      },",
+            "      {",
+            "        label: 'Online sales',",
+            "        data: chartPayload.online_sales,",
+            "        backgroundColor: 'rgba(34, 197, 94, 0.85)',",
+            "        stack: 'sales',",
+            "      }",
+            "    ]",
+            "  },",
+            "  options: {",
+            "    responsive: true,",
+            "    maintainAspectRatio: false,",
+            "    scales: {",
+            "      y: {",
+            "        stacked: true,",
+            "        ticks: { callback: value => numberFormatter(value) },",
+            "        beginAtZero: true,",
+            "      },",
+            "      x: { stacked: true }",
+            "    },",
+            "    plugins: {",
+            "      tooltip: {",
+            "        callbacks: {",
+            "          label: context => `${context.dataset.label}: ${numberFormatter(context.parsed.y)}`",
+            "        }",
+            "      }",
+            "    }",
+            "  }",
+            "});",
+            "",
+            "new Chart(document.getElementById('marketingScatterChart'), {",
+            "  type: 'scatter',",
+            "  data: {",
+            "    datasets: [",
+            "      {",
+            "        label: 'Monthly totals',",
+            "        data: chartPayload.scatter_points,",
+            "        backgroundColor: 'rgba(59, 130, 246, 0.85)',",
+            "        pointRadius: 6,",
+            "      },",
+            "      {",
+            "        type: 'line',",
+            "        label: 'Regression line',",
+            "        data: chartPayload.regression_points,",
+            "        borderColor: 'rgba(239, 68, 68, 0.9)',",
+            "        borderWidth: 2,",
+            "        pointRadius: 0,",
+            "        fill: false,",
+            "        tension: 0,",
+            "      }",
+            "    ]",
+            "  },",
+            "  options: {",
+            "    responsive: true,",
+            "    maintainAspectRatio: false,",
+            "    scales: {",
+            "      x: {",
+            "        title: { display: true, text: 'Marketing spend (USD)' },",
+            "        ticks: { callback: value => numberFormatter(value) },",
+            "      },",
+            "      y: {",
+            "        title: { display: true, text: 'Total sales (USD)' },",
+            "        ticks: { callback: value => numberFormatter(value) },",
+            "      }",
+            "    },",
+            "    plugins: {",
+            "      tooltip: {",
+            "        callbacks: {",
+            "          label: context => `${context.dataset.label}: (${numberFormatter(context.parsed.x)}, ${numberFormatter(context.parsed.y)})`",
+            "        }",
+            "      }",
+            "    }",
+            "  }",
+            "});",
+            "</script>",
+            "",
+        ]
+    )
+
+
 def publish_site(records: list[MonthlyRecord], plot_paths: dict[str, Path], site_dir: Path = SITE_DIR) -> None:
     site_dir.mkdir(parents=True, exist_ok=True)
     assets_dir = site_dir / "assets"
@@ -231,6 +439,8 @@ def publish_site(records: list[MonthlyRecord], plot_paths: dict[str, Path], site
         relative_paths[label] = Path("assets") / original_path.name
 
     site_summary = build_summary(records, plot_paths=relative_paths)
+    interactive_section = _build_interactive_section(records)
+    site_content = site_summary + interactive_section
     front_matter = "\n".join(
         [
             "---",
@@ -241,7 +451,7 @@ def publish_site(records: list[MonthlyRecord], plot_paths: dict[str, Path], site
         ]
     )
     site_index_path = site_dir / "index.md"
-    site_index_path.write_text(front_matter + site_summary, encoding="utf-8")
+    site_index_path.write_text(front_matter + site_content, encoding="utf-8")
 
 
 def main() -> None:
