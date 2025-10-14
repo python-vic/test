@@ -231,8 +231,17 @@ def publish_site(records: list[MonthlyRecord], plot_paths: dict[str, Path], site
         relative_paths[label] = Path("assets") / original_path.name
 
     site_summary = build_summary(records, plot_paths=relative_paths)
+    front_matter = "\n".join(
+        [
+            "---",
+            'title: "Coffee Sales Analysis"',
+            "layout: default",
+            "---",
+            "",
+        ]
+    )
     site_index_path = site_dir / "index.md"
-    site_index_path.write_text(site_summary, encoding="utf-8")
+    site_index_path.write_text(front_matter + site_summary, encoding="utf-8")
 
 
 def main() -> None:

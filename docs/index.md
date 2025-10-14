@@ -1,3 +1,7 @@
+---
+title: "Coffee Sales Analysis"
+layout: default
+---
 # Coffee Chain Sales Analysis
 
 ## Key Metrics
