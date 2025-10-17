@@ -26,3 +26,24 @@ No external dependencies are required.
 
 The generated report can be found in `outputs/coffee_sales_summary.md`. It highlights the strong positive correlation between
 marketing investments and total sales, the months with the fastest growth, and how online sales contribute to revenue.
+
+## Spark ETL + GitHub Pages Visualizations
+
+This repo also includes a small PySpark ETL that turns the CSV into a JSON payload for charts hosted on GitHub Pages.
+
+- ETL script: `scripts/spark_etl.py`
+- Input CSV: `data/coffee_sales.csv`
+- Output JSON: `docs/assets/data.json`
+- Frontend: `docs/index.html` (loads the JSON and renders charts via Chart.js)
+
+Run locally:
+
+```bash
+pip install pyspark  # requires Java 8+ or 11+
+python scripts/spark_etl.py  # writes docs/assets/data.json
+python -m http.server -d docs 8000  # visit http://localhost:8000/
+```
+
+On GitHub Pages:
+- Ensure the repository is configured to publish from the `docs/` folder.
+- Commit `docs/index.html` and `docs/assets/data.json` (run ETL before pushing) so charts load without server-side code.
