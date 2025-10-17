@@ -1,0 +1,46 @@
+:root {
+  --bg: #f8fafc;
+  --text: #0f172a;
+  --muted: #475569;
+  --card: #ffffff;
+  --border: #e5e7eb;
+  --brand: #0ea5e9;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#0b1220; --text:#e5e7eb; --muted:#94a3b8; --card:#0f172a; --border:#1f2937; --brand:#22d3ee; }
+}
+html[data-theme="dark"] { --bg:#0b1220; --text:#e5e7eb; --muted:#94a3b8; --card:#0f172a; --border:#1f2937; --brand:#22d3ee; }
+
+* { box-sizing: border-box; }
+body { font-family: system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial; margin:0; background:var(--bg); color:var(--text); }
+.container { max-width: 1180px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+h1 { margin: 0.2rem 0 0.25rem; font-size: 1.75rem; }
+.note { color: var(--muted); margin-top: .25rem; font-size: .95rem; }
+
+.site-nav { position: sticky; top: 0; background: rgba(255,255,255,.7); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); z-index: 20; }
+html[data-theme="dark"] .site-nav { background: rgba(11,18,32,.7); }
+.site-nav__inner { max-width: 1180px; margin: 0 auto; padding: .5rem 1rem; display: flex; align-items: center; gap: .75rem; }
+.brand { font-weight: 700; letter-spacing:.2px; }
+.spacer { flex: 1; }
+
+.controls { display:flex; gap:1rem; flex-wrap:wrap; align-items:center; margin:1rem 0 1.5rem; }
+.controls .group { display:flex; gap:.5rem; align-items:center; }
+.controls .label { font-size:.9rem; color:var(--muted); margin-right:.25rem; }
+
+.btn { appearance:none; border:1px solid var(--border); background:var(--card); color:var(--text); padding:.45rem .75rem; border-radius:.5rem; cursor:pointer; font-size:.9rem; }
+.btn:hover { border-color:#cbd5e1; }
+.btn-secondary { background:transparent; }
+.btn-chip { background:transparent; border-radius:999px; padding:.35rem .8rem; }
+.btn-chip.active { background: var(--brand); color:#000; border-color: transparent; }
+
+.switch { display:inline-flex; align-items:center; gap:.4rem; cursor:pointer; font-size:.9rem; }
+.switch input { margin-right:.25rem; }
+
+.chart-grid { display:grid; gap: 1.75rem; margin-top: 1rem; }
+@media (min-width: 900px) { .chart-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .chart-grid .chart-card:nth-child(3) { grid-column: span 2; } }
+.chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.25rem 1.25rem; box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08); }
+.card-head { display:flex; align-items:center; justify-content:space-between; gap:.75rem; }
+.chart-card h3 { margin: .25rem 0 1rem; font-size: 1.05rem; }
+.chart-card canvas { max-height: 460px; }
+
+.error { color: #b91c1c; background: #fee2e2; border: 1px solid #fecaca; padding: .75rem 1rem; border-radius: .5rem; }
