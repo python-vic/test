@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Anti‑Fraud Analytics Dashboard</title>
+    <link rel="stylesheet" href="assets/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+  </head>
+  <body>
+    <header class="site-nav">
+      <div class="site-nav__inner">
+        <div class="brand">Anti‑Fraud</div>
+        <div class="spacer"></div>
+        <button id="themeToggle" class="btn btn-secondary" aria-label="Toggle theme">🌙</button>
+        <a class="btn" href="assets/fraud_data.json" download>Download Data</a>
+      </div>
+    </header>
+
+    <div class="container">
+      <h1>Anti‑Fraud Analytics</h1>
+      <p class="note">Spark ETL aggregates transactions to produce this dashboard.</p>
+
+      <div id="error" class="error" style="display:none"></div>
+
+      <section class="controls">
+        <div class="group">
+          <span class="label">Range</span>
+          <button class="btn btn-chip" data-range="all">All</button>
+          <button class="btn btn-chip" data-range="30d">Last 30d</button>
+          <button class="btn btn-chip" data-range="14d">Last 14d</button>
+          <button class="btn btn-chip" data-range="7d">Last 7d</button>
+        </div>
+        <div class="group">
+          <button id="resetZoom" class="btn btn-secondary">Reset Zoom</button>
+          <button id="exportPng" class="btn">Export PNG</button>
+        </div>
+      </section>
+
+      <div class="chart-grid">
+        <section class="chart-card">
+          <div class="card-head"><h3>Tx Volume and Fraud Rate</h3></div>
+          <canvas id="tsChart" height="420"></canvas>
+        </section>
+        <section class="chart-card">
+          <div class="card-head"><h3>Top Merchants by Fraud Amount</h3></div>
+          <canvas id="merchantChart" height="420"></canvas>
+        </section>
+        <section class="chart-card">
+          <div class="card-head"><h3>Channel Breakdown (Fraud vs Legit)</h3></div>
+          <canvas id="channelChart" height="420"></canvas>
+        </section>
+      </div>
+    </div>
+
+    <script src="assets/fraud_app.js"></script>
+  </body>
+  </html>
+

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bank Anti‑Fraud Dashboard</title>
+    <link rel="stylesheet" href="assets/styles.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+      #map { height: 520px; border-radius: 12px; border: 1px solid var(--border); }
+      .card-grid { display:grid; gap:1.25rem; grid-template-columns: 1fr; }
+      @media (min-width: 1100px) { .card-grid { grid-template-columns: 1.2fr .8fr; } }
+      .stat { font-size: .95rem; color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <header class="site-nav">
+      <div class="site-nav__inner">
+        <div class="brand">Bank Anti‑Fraud</div>
+        <div class="spacer"></div>
+        <button id="themeToggle" class="btn btn-secondary" aria-label="Toggle theme">🌙</button>
+        <a class="btn" href="assets/bank_data.json" download>Download Data</a>
+      </div>
+    </header>
+
+    <div class="container">
+      <h1>Bank Anti‑Fraud Analytics</h1>
+      <p class="note">Synthetic but realistic bank transactions with risk signals. Use range filters, zoom and the fraud map.</p>
+
+      <div id="error" class="error" style="display:none"></div>
+
+      <section class="controls">
+        <div class="group">
+          <span class="label">Range</span>
+          <button class="btn btn-chip" data-range="all">All</button>
+          <button class="btn btn-chip" data-range="30d">Last 30d</button>
+          <button class="btn btn-chip" data-range="14d">Last 14d</button>
+          <button class="btn btn-chip" data-range="7d">Last 7d</button>
+        </div>
+        <div class="group">
+          <button id="resetZoom" class="btn btn-secondary">Reset Zoom</button>
+          <button id="exportPng" class="btn">Export PNG</button>
+        </div>
+      </section>
+
+      <div class="card-grid">
+        <section class="chart-card">
+          <div class="card-head"><h3>Transactions & Fraud Rate</h3></div>
+          <canvas id="tsChart" height="380"></canvas>
+          <div class="stat" id="tsSummary"></div>
+        </section>
+        <section class="chart-card">
+          <div class="card-head"><h3>Top Accounts by Fraud Amount</h3></div>
+          <canvas id="acctChart" height="380"></canvas>
+        </section>
+      </div>
+
+      <div class="chart-grid" style="margin-top:1.5rem">
+        <section class="chart-card">
+          <div class="card-head"><h3>Channel Breakdown</h3></div>
+          <canvas id="chanChart" height="420"></canvas>
+        </section>
+        <section class="chart-card">
+          <div class="card-head"><h3>Fraudulent Transactions Map</h3></div>
+          <div id="map"></div>
+        </section>
+      </div>
+    </div>
+
+    <script src="assets/bank_app.js"></script>
+  </body>
+  </html>
+
