@@ -62,6 +62,39 @@ layout: default
   padding: 1.5rem;
   box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
 }
+.chart-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.chart-button {
+  appearance: none;
+  border: 1px solid #cbd5f5;
+  background: #f8fafc;
+  color: #1f2937;
+  border-radius: 9999px;
+  padding: 0.4rem 1.05rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.chart-button:hover {
+  background: #eef2ff;
+  border-color: #a5b4fc;
+}
+.chart-button.is-active {
+  background: #1f67b5;
+  border-color: #1f67b5;
+  color: #ffffff;
+  box-shadow: 0 10px 20px rgba(31, 103, 181, 0.25);
+}
+.chart-button:focus-visible {
+  outline: 3px solid rgba(31, 103, 181, 0.35);
+  outline-offset: 2px;
+}
 .chart-card h3 {
   margin-top: 0;
   margin-bottom: 1rem;
@@ -74,6 +107,11 @@ layout: default
 <div class="chart-grid">
   <section class="chart-card">
     <h3>Monthly Total Sales</h3>
+    <div class="chart-controls" role="group" aria-label="Select sales metric">
+      <button type="button" class="chart-button is-active" data-chart="totalSales" data-series="total" aria-pressed="true">Total sales</button>
+      <button type="button" class="chart-button" data-chart="totalSales" data-series="online" aria-pressed="false">Online sales</button>
+      <button type="button" class="chart-button" data-chart="totalSales" data-series="inStore" aria-pressed="false">In-store sales</button>
+    </div>
     <canvas id="totalSalesChart"></canvas>
   </section>
   <section class="chart-card">
@@ -94,7 +132,7 @@ const chartPayload = JSON.parse(document.getElementById('coffee-chart-data').tex
 const usdFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 const numberFormatter = value => usdFormatter.format(value);
 
-new Chart(document.getElementById('totalSalesChart'), {
+const totalSalesChart = new Chart(document.getElementById('totalSalesChart'), {
   type: 'line',
   data: {
     labels: chartPayload.months,
@@ -127,6 +165,53 @@ new Chart(document.getElementById('totalSalesChart'), {
       legend: { display: false }
     }
   }
+});
+
+const totalSalesSeriesMap = {
+  total: {
+    label: 'Total sales',
+    data: chartPayload.total_sales,
+    borderColor: 'rgb(16, 124, 165)',
+    backgroundColor: 'rgba(16, 124, 165, 0.1)'
+  },
+  online: {
+    label: 'Online sales',
+    data: chartPayload.online_sales,
+    borderColor: 'rgba(34, 197, 94, 0.9)',
+    backgroundColor: 'rgba(34, 197, 94, 0.15)'
+  },
+  inStore: {
+    label: 'In-store sales',
+    data: chartPayload.in_store_sales,
+    borderColor: 'rgba(234, 88, 12, 0.9)',
+    backgroundColor: 'rgba(234, 88, 12, 0.15)'
+  }
+};
+
+const totalSalesButtons = document.querySelectorAll('[data-chart="totalSales"]');
+totalSalesButtons.forEach(button => {
+  button.addEventListener('click', () => {
+    if (button.classList.contains('is-active')) {
+      return;
+    }
+
+    const seriesKey = button.dataset.series;
+    const seriesConfig = totalSalesSeriesMap[seriesKey];
+    const dataset = totalSalesChart.data.datasets[0];
+
+    dataset.label = seriesConfig.label;
+    dataset.data = seriesConfig.data;
+    dataset.borderColor = seriesConfig.borderColor;
+    dataset.backgroundColor = seriesConfig.backgroundColor;
+
+    totalSalesChart.update();
+
+    totalSalesButtons.forEach(control => {
+      const isActive = control === button;
+      control.classList.toggle('is-active', isActive);
+      control.setAttribute('aria-pressed', String(isActive));
+    });
+  });
 });
 
 new Chart(document.getElementById('channelBreakdownChart'), {
